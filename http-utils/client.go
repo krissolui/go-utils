@@ -80,3 +80,14 @@ func SendRequestWithBody[T any](
 
 	return res, nil
 }
+
+func ReadJSONRes[T any](res *http.Response) (*T, error) {
+	var payload T
+
+	err := json.NewDecoder(res.Body).Decode(&payload)
+	if err != nil {
+		return nil, err
+	}
+
+	return &payload, nil
+}

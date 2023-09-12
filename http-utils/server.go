@@ -6,7 +6,7 @@ import (
 	"net/http"
 )
 
-func ReadJSON[T any](req *http.Request) (*T, error) {
+func ReadJSONReq[T any](req *http.Request) (*T, error) {
 	var payload T
 
 	err := json.NewDecoder(req.Body).Decode(&payload)
@@ -17,14 +17,13 @@ func ReadJSON[T any](req *http.Request) (*T, error) {
 	return &payload, nil
 }
 
-func ResponseJSON(w http.ResponseWriter, response any, status int, headers ...http.Header) {
+func sendResponse(w http.ResponseWriter, response any, status int, headers ...http.Header) {
 	if len(headers) > 0 {
 		for key, value := range headers[0] {
 			w.Header()[key] = value
 		}
 	}
 
-	w.Header().Set("Content-Type", "application/json")
 	w.WriteHeader(status)
 
 	payload, err := json.Marshal(response)
@@ -35,11 +34,20 @@ func ResponseJSON(w http.ResponseWriter, response any, status int, headers ...ht
 	w.Write(payload)
 }
 
-func ResponseError(w http.ResponseWriter, response any, status ...int) {
-	statusCode := http.StatusBadRequest
-	if len(status) > 0 {
-		statusCode = status[0]
+func ResponseJSON(w http.ResponseWriter, response any, headers ...http.Header) {
+	w.Header().Set("Content-Type", "application/json")
+
+	if len(headers) > 0 {
+		for key, value := range headers[0] {
+			w.Header()[key] = value
+		}
 	}
 
-	ResponseJSON(w, response, statusCode)
+	sendResponse(w, response, http.StatusAccepted, headers...)
+}
+
+func ResponseError(w http.ResponseWriter, response any, status int) {
+	w.Header().Set("Content-Type", "application/problem+json")
+
+	sendResponse(w, response, status)
 }
